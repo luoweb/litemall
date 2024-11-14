@@ -1,9 +1,39 @@
 name: Actions
 
-on: [push, pull_request]
-
+on: 
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+        inputs:
+            task_name:
+                description: 'Tag name of the image to be pushed.'
+                type: choice
+                required: true
+                default: 'build'
+                options:
+                    - 'build'
+                    - 'test'
+            node_version:
+                description: 'Node.js version to build this image with.'
+                type: choice
+                required: true
+                default: '20'
+                options:
+                    - '20'
+            image_name_custom:
+                description: 'Tag name of the custom image to be pushed.'
+                type: string
+                required: false
+                default: 'luoweb/litemall-custom'
+            tag_version:
+                description: 'Tag version of the image to be pushed.'
+                type: string
+                required: false
+                default: 'latest'
 jobs:
   build:
+    if: github.event.inputs.task_name == 'build'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     # runs-on: self-hosted
@@ -14,7 +44,7 @@ jobs:
       # - uses: AutoModality/action-clean@v1
       - name: Clean docker image cache
         shell: bash
-        # if: ${{ github.repository == 'luoweb/inference' }}
+        # if: ${{ github.event.inputs.node_version == 'luoweb/inference' }}
         run: |
           df -h
           sudo rm -rf /usr/share/dotnet
@@ -43,7 +73,8 @@ jobs:
 
       - name: Push docker image to Aliyun
         shell: bash
-        if: ${{ github.repository == 'luoweb/litemall' }}
+        # if: ${{ github.repository == 'luoweb/litemall' }}
+        if: ${{ github.event.inputs.node_version == 'luoweb/inference' }}
         env:
           DOCKER_ORG: registry.cn-hangzhou.aliyuncs.com/roweb
         run: |
@@ -78,6 +109,7 @@ jobs:
   # Building and testing Java with Maven
   # https://docs.github.com/en/actions/guides/building-and-testing-java-with-maven
   Litemall-all:
+    if: github.event.inputs.task_name == 'test'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -105,6 +137,7 @@ jobs:
   # Building and testing Node.js
   # https://docs.github.com/en/actions/guides/building-and-testing-nodejs
   Litemall-admin:
+    if: github.event.inputs.task_name == 'test'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -123,6 +156,7 @@ jobs:
     - run: npm --prefix litemall-admin run test
 
   Litemall-vue:
+    if: github.event.inputs.task_name == 'test'
     runs-on: ubuntu-latest
     strategy:
       matrix:
