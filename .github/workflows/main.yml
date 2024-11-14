@@ -80,6 +80,7 @@ jobs:
         if: github.event.inputs.task_name == 'build'
         env:
           DOCKER_ORG: registry.cn-hangzhou.aliyuncs.com/roweb
+          IMAGE_TAG: latest
         run: |
 
           cat ./litemall-db/sql/litemall_schema.sql > ./docker/db/init-sql/litemall.sql
@@ -100,10 +101,10 @@ jobs:
           docker-compose build
           docker images
 
-          docker tag "litemall" "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
+          docker tag "docker_litemall" "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
           docker push "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
 
-          docker tag "litemall" "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
+          docker tag "docker_litemall" "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
           docker push "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
 
       - name: Clean docker image cache
