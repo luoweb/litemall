@@ -76,8 +76,7 @@ jobs:
 
       - name: Push docker image to Aliyun
         shell: bash
-        # if: ${{ github.repository == 'luoweb/litemall' }}
-        if: ${{ github.event.inputs.node_version == 'luoweb/inference' }}
+        if: github.event.inputs.task_name == 'build'
         env:
           DOCKER_ORG: registry.cn-hangzhou.aliyuncs.com/roweb
         run: |
