@@ -3,6 +3,78 @@ name: Actions
 on: [push, pull_request]
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # runs-on: self-hosted
+    # strategy:
+    #   matrix:
+    #     python-version: [ "3.9" ]
+    steps:
+      # - uses: AutoModality/action-clean@v1
+      - name: Clean docker image cache
+        shell: bash
+        # if: ${{ github.repository == 'luoweb/inference' }}
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Log in to Aliyun Docker Hub
+        uses: docker/login-action@v1
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.DOCKERHUB_ALIYUN_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_ALIYUN_PASSWORD }}
+
+      - name: Push docker image to Aliyun
+        shell: bash
+        if: ${{ github.repository == 'luoweb/litemall' }}
+        env:
+          DOCKER_ORG: registry.cn-hangzhou.aliyuncs.com/roweb
+        run: |
+
+          cat ./litemall-db/sql/litemall_schema.sql > ./docker/db/init-sql/litemall.sql
+          cat ./litemall-db/sql/litemall_table.sql >> ./docker/db/init-sql/litemall.sql
+          cat ./litemall-db/sql/litemall_data.sql >> ./docker/db/init-sql/litemall.sql
+          
+          cd ./litemall-admin
+          npm install --registry=https://registry.npm.taobao.org
+          npm run build:dep
+          cd ..
+          mvn clean package
+          cp -f ./litemall-all/target/litemall-all-*-exec.jar ./docker/litemall/litemall.jar
+
+          cd ./docker
+          docker-compose build
+          docker images
+
+          docker tag "litemall" "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
+          docker push "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
+
+          docker tag "litemall" "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
+          docker push "${DOCKER_ORG}/litemall:${IMAGE_TAG}"
+
+      - name: Clean docker image cache
+        shell: bash
+        if: ${{ github.repository == 'luoweb/litemall' }}
+        run: |
+          docker system prune -f -a
+
   # Building and testing Java with Maven
   # https://docs.github.com/en/actions/guides/building-and-testing-java-with-maven
   Litemall-all:
