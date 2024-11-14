@@ -90,7 +90,7 @@ jobs:
           sudo apt update
           sudo apt install -y npm
 
-          npm install --registry=https://registry.npm.taobao.org
+          npm install --registry=https://registry.npmmirror.com
           npm run build:dep
           cd ..
           mvn clean package
