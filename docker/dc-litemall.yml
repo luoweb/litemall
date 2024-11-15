@@ -1,0 +1,52 @@
+version: '3'
+services:
+  # mysql57:
+  #   image: mysql:5.7
+  #   container_name: mysql57
+  #   ports:
+  #     - "3306:3306"
+  #   command:
+  #     --character-set-server=utf8
+  #     --collation-server=utf8_general_ci
+  #     --default-authentication-plugin=mysql_native_password
+  #   volumes:
+  #     - ./db/conf.d:/etc/mysql/conf.d
+  #     - ./db/data:/var/lib/mysql
+  #     - ./db/init-sql:/docker-entrypoint-initdb.d
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: litemall123456
+  #   restart: always
+  mysql80:
+    container_name: mysql
+    image: registry.cn-hangzhou.aliyuncs.com/roweb/mysql:8.0-debian
+    restart: always
+    volumes:
+        - ./db/mysql:/var/lib/mysql
+        - ./db/conf:/etc/mysql/conf.d
+        - ./db/init-sql:/docker-entrypoint-initdb.d
+    environment:
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-litemall123456}
+        MYSQL_DATABASE: ${MYSQL_DATABASE:-litemall}
+        MYSQL_USER: ${MYSQL_USER:-litemall}
+        MYSQL_PASSWORD: ${MYSQL_PASSWORD:-litemall123456}
+    ports:
+        - "${MYSQL_PORT:-3306}:3306"
+  litemall:
+    # build:
+    #   context: litemall
+    #   dockerfile: Dockerfile
+    image: registry.cn-hangzhou.aliyuncs.com/roweb/litemall:latest
+    container_name: litemall
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./litemall/storage:/storage
+      - ./litemall/logs:/logs
+      - ./litemall/backup:/backup
+      - /etc/localtime:/etc/localtime
+    environment:
+      - TZ=Asia/Shanghai
+    depends_on:
+      # - mysql57
+      - mysql80
+    restart: always
